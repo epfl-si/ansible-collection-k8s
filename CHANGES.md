@@ -1,5 +1,6 @@
-# Version 0.2.0: minor feature release
+# Version 0.2.0: major feature release
 
+- `epfl_si.k8s.helm_info` module
 - `epfl_si.k8s.k8s_api_call` module
 
 # Version 0.1.0
