@@ -1,6 +1,7 @@
 # Version 0.4.0: feature release
 
 - `epfl_si.k8s.k8s_exec` and `epfl_si.k8s.k8s_cp` modules
+- Export `module_utils` Python modules for roles and other collections to re-use (instead of, or in addition to just running the provided Ansible tasks)
 
 # Version 0.3.0: feature release
 
