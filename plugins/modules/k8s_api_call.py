@@ -5,7 +5,7 @@ from ansible_collections.kubernetes.core.plugins.module_utils.k8s.core import An
 
 
 import kubernetes   # Because Ansible code has this bizarre `except ImportError` clause on it, which we really don't want to investigate (again)
-from ansible_collections.kubernetes.core.plugins.module_utils.k8s.client import get_api_client
+from ansible_collections.epfl_si.k8s.plugins.module_utils.kubeconfig import Kubeconfig
 
 DOCUMENTATION = r'''
 ---
@@ -81,8 +81,10 @@ EXAMPLES = r'''
 
 '''
 
+
 class APIError (Exception):
     pass
+
 
 class APICall:
     """Implementation for `k8s_api_call` Ansible tasks."""
@@ -94,10 +96,7 @@ class APICall:
 
     @cached_property
     def client (self):
-        if self.module.params.get("kubeconfig") is not None:
-            return APIClient(kubeconfig=self.module.params["kubeconfig"])
-        else:
-            return APIClient(module=self.module)
+        return Kubeconfig(args=self.module.params).get_api_client()
 
     @cached_property
     def module (self):
@@ -106,40 +105,19 @@ class APICall:
 
     def run (self):
         # https://stackoverflow.com/a/63747147
-        data = self.client.call(
-            self.module.params['method'],
+        (data, status, headers) = self.client.client.call_api(
             self.module.params['uri'],
-            body=self.module.params['body'])
-
-        self.module.exit_json(
-            changed=True,
-            api_response=data)
-
-
-class APIClient:
-    def __init__ (self, module=None, kubeconfig=None):
-        if module is not None:
-            # Ansible-style API: pass in an AnsibleModule instance
-            client = get_api_client(module=module)
-        elif kubeconfig is not None:
-            client = get_api_client(kubeconfig=kubeconfig)
-        else:
-            raise ValueError("Unable to create API client from constructor arguments")
-
-        self.client = client
-
-    def call (self, method, uri, body=None):
-        client = self.client.client.client  # Ansible was there 🤷
-        (data, status, headers) = client.call_api(
-            uri, method,   # Google was there 🤷
+            self.module.params['method'],
             auth_settings=['BearerToken'],
             response_type="object",
-            body=body)
+            body=self.module.params['body'])
 
         if status not in (200, 201):
             raise APIError(data)
 
-        return data
+        self.module.exit_json(
+            changed=True,
+            api_response=data)
 
 
 if __name__ == '__main__':

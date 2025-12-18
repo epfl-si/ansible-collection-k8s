@@ -12,6 +12,9 @@ AnsiballZ.
 
 from copy import deepcopy
 
+from ansible_collections.kubernetes.core.plugins.module_utils.k8s.core import requires
+from ansible_collections.kubernetes.core.plugins.module_utils.k8s.client import get_api_client
+
 class Kubeconfig:
     """Access (credentials to) the Kubernetes cluster in the `epfl_si.k8s` way."""
     def __init__ (self, *, args, vars=None, expand_vars_fn=None):
@@ -67,3 +70,18 @@ class Kubeconfig:
             ret["kubeconfig"] = self.expand_var("ansible_k8s_kubeconfig")
 
         return ret
+
+    def get_api_client (self, server_side_dry_run=False):
+        """
+        @return An instance of `kubernetes.client.APIClient`
+        """
+
+        class MockModule:
+            def __init__ (self, params):
+                self.params = params
+                self.server_side_dry_run = server_side_dry_run
+
+            def requires (self, *args, **kwargs):
+                return requires(*args, **kwargs)
+
+        return get_api_client(module=MockModule(self.as_augmented_args())).client

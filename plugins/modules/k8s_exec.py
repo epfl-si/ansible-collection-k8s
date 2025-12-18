@@ -12,15 +12,14 @@ from ansible_collections.kubernetes.core.plugins.module_utils.ansiblemodule impo
 from ansible_collections.kubernetes.core.plugins.module_utils.args_common import (
     AUTH_ARG_SPEC,
 )
-from ansible_collections.kubernetes.core.plugins.module_utils.k8s.client import (
-    get_api_client,
-)
 from ansible_collections.kubernetes.core.plugins.module_utils.k8s.core import (
     AnsibleK8SModule,
 )
 from ansible_collections.kubernetes.core.plugins.module_utils.k8s.exceptions import (
     CoreException,
 )
+
+from ansible_collections.epfl_si.k8s.plugins.module_utils.kubeconfig import Kubeconfig
 
 DOCUMENTATION = r"""
 
@@ -139,8 +138,7 @@ def main():
         supports_check_mode=True)
 
     try:
-        client = get_api_client(module)
-        execute_module(module, client.client)
+        execute_module(module, Kubeconfig(args=module.params).get_api_client())
     except CoreException as e:
         module.fail_from_exception(e)
 
