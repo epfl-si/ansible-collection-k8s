@@ -1,8 +1,5 @@
-import yaml
-
 from kubernetes.client.apis import core_v1_api
 from kubernetes.client.exceptions import ApiException
-from kubernetes.stream import stream
 
 from ansible.module_utils._text import to_native
 
@@ -20,6 +17,7 @@ from ansible_collections.kubernetes.core.plugins.module_utils.k8s.exceptions imp
 )
 
 from ansible_collections.epfl_si.k8s.plugins.module_utils.kubeconfig import Kubeconfig
+from ansible_collections.epfl_si.k8s.plugins.module_utils.exec import kube_exec
 
 DOCUMENTATION = r"""
 
@@ -49,11 +47,6 @@ options:
     type: str
     description:
     - The UTF-8 encoded standard input text to pass to the remote command.
-    - ⚠ stdin will *not* be closed in the remote process after sending this text,
-      because this is not something that Kubernetes supports (kubernetes-client/python
-      issue #2371). Consider (shudder!) using a variation of
-      `['bash', '-c', 'sed -e "/#### CUT HERE ####/" | ...']` for your `command` if you
-      require a properly closed stdin.
 """
 
 def argspec():
@@ -63,20 +56,21 @@ def argspec():
     spec["container"] = dict(type="str")
     spec["command"] = dict(type="list", elements="str", required=True)
     spec["stdin"] = dict(type="str")
+    spec["close_stdin"] = dict(type="bool", default=True)
     return spec
 
 
 def execute_module(module, client):
     """Copied and modified from kubernetes.core.k8s's k8s_exec module."""
-    api = core_v1_api.CoreV1Api(client.client)
-
     optional_kwargs = {}
+    container_name = None
     if module.params.get("container"):    # Tolerate `container: ~` in YAML
-        optional_kwargs["container"] = module.params["container"]
+        container_name = module.params["container"]
     else:
         # default to the first container available on pod
         resp = None
         try:
+            api = core_v1_api.CoreV1Api(client.client)
             resp = api.read_namespaced_pod(
                 name=module.params["pod"], namespace=module.params["namespace"]
             )
@@ -84,50 +78,26 @@ def execute_module(module, client):
             pass
 
         if resp and len(resp.spec.containers) >= 1:
-            optional_kwargs["container"] = resp.spec.containers[0].name
+            container_name = resp.spec.containers[0].name
 
-    try:
-        resp = stream(
-            api.connect_get_namespaced_pod_exec,
-            module.params["pod"],
-            module.params["namespace"],
-            command=module.params["command"],
-            stdin="stdin" in module.params,
-            stdout=True,
-            stderr=True,
-            tty=False,
-            _preload_content=False,
-            **optional_kwargs
-        )
-    except Exception as e:
-        module.fail_json(
-            msg="Failed to execute on pod %s"
-            " due to : %s" % (module.params.get("pod"), to_native(e))
-        )
+    if container_name is None:
+        raise ValueError("Must specify `container_name`")
 
-    if "stdin" in module.params:
-        resp.write_stdin(module.params["stdin"])
-
-    stdout, stderr, rc = [], [], 0
-    while resp.is_open():
-        resp.update(timeout=1)
-        if resp.peek_stdout():
-            stdout.append(resp.read_stdout())
-        if resp.peek_stderr():
-            stderr.append(resp.read_stderr())
-    err = resp.read_channel(3)
-    err = yaml.safe_load(err)
-    if err["status"] == "Success":
-        rc = 0
-    else:
-        rc = int(err["details"]["causes"][0]["message"])
+    k = kube_exec(
+        client,
+        module.params["namespace"],
+        module.params["pod"],
+        container_name,
+        module.params["command"],
+        stdin=module.params.get("stdin"),
+        close_stdin=module.params.get("close_stdin"))
 
     module.exit_json(
-        changed=True,
-        stdout="".join(stdout),
-        stderr="".join(stderr),
-        rc=rc,
-        return_code=rc)
+        changed=True,  # Must assume that way, since we don't know what the command does
+        stdout=k.stdout,
+        stderr=k.stderr,
+        rc=k.rc,
+        return_code=k.rc)
 
 
 def main():
