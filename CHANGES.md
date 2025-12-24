@@ -1,3 +1,8 @@
+# Version 0.5.0: feature release
+
+- Provide `kube_exec` function for use in roles and other collections
+- `epfl_si.k8s.k8s_exec`: attempt to close `command`'s stdin using shell tricks
+
 # Version 0.4.0: feature release
 
 - `epfl_si.k8s.k8s_exec` and `epfl_si.k8s.k8s_cp` modules
