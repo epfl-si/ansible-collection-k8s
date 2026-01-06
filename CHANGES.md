@@ -1,3 +1,7 @@
+# Version 0.6.0: feature release
+
+- `epfl_si.k8s.helm` module
+
 # Version 0.5.0: feature release
 
 - Provide `kube_exec` function for use in roles and other collections
