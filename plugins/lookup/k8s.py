@@ -65,7 +65,7 @@ from ansible_collections.kubernetes.core.plugins.lookup.k8s import KubernetesLoo
 
 
 class LookupModule(LookupBase):
-    """Lifted verbatim from kubernetes.core.k8s"""
+    """Adapted from kubernetes.core.k8s"""
     def _run(self, terms, variables=None, **kwargs):
         if "ansible_k8s_kubeconfig" in variables and "kubeconfig" not in kwargs:
             kwargs["kubeconfig"] = self._templar.template(variables["ansible_k8s_kubeconfig"])
