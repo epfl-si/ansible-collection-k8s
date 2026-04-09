@@ -1,3 +1,7 @@
+# Version 0.7.0: feature release
+
+- `epfl_si.k8s.helm_repository` module: does `helm repo update` when `helm repo add` would do nothing
+
 # Version 0.6.0: feature release
 
 - `epfl_si.k8s.helm` module
