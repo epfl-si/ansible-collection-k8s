@@ -28,8 +28,10 @@ class AnsibleVars:
     def has (self, key):
         return key in self._vars
 
-    def expand (self, key):
-        if self._templar is not None:
+    def expand (self, var_name):
+        if self._templar is None:
+            return self._vars[var_name]
+        elif hasattr(self._templar, "resolve_variable_expression"):
+            return self._templar.resolve_variable_expression(var_name)
+        else:  # Older Ansibles before https://github.com/ansible/ansible/pull/84621
             return self._templar.template("{{ %s }}" % var_name)
-        else:
-            return self._vars[key]
