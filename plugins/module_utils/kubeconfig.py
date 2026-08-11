@@ -14,43 +14,22 @@ from copy import deepcopy
 
 from ansible_collections.kubernetes.core.plugins.module_utils.k8s.core import requires
 from ansible_collections.kubernetes.core.plugins.module_utils.k8s.client import get_api_client
+from ansible_collections.epfl_si.k8s.plugins.module_utils.ansible_internals import AnsibleVars
 
 class Kubeconfig:
     """Access (credentials to) the Kubernetes cluster in the `epfl_si.k8s` way."""
-    def __init__ (self, *, args, vars=None, expand_vars_fn=None):
+    def __init__ (self, *, args, **vars_kwargs):
         """Class constructor.
 
 
         @param args           The arguments dict, as if from the YAML (after
                               Jinja expansion).
 
-        @param vars           The vars dict from the current task. Only required
-                              (or meaningful) on the Ansible controller (not in
-                              a module). If set, `expand_vars_fn` must be set as well.
-
-        @param expand_vars_fn The function that should be used to expand
-                              vars, e.g. the `templar.template` bound
-                              method from an Ansible `Templar` instance.
+        @param vars_kwargs    Passed to `ansible_collections.epfl_si.k8s.plugins.module_utils.ansible_internals.AnsibleVars` as-is
         """
 
         self.args = args
-
-        if vars is not None:
-            if expand_vars_fn is None:
-                raise ValueError("`expand_vars_fn` is required if `vars` is passed.")
-            self._vars = vars
-            self._expand_vars_fn = expand_vars_fn
-        else:
-            self._vars = {}
-
-    def has_var (self, key):
-        return key in self._vars
-
-    def expand_var (self, key):
-        if self.has_var(key):
-            return self._expand_vars_fn(self._vars[key])
-        else:
-            return None
+        self.vars = AnsibleVars(**vars_kwargs)
 
     def as_augmented_args (self):
         """Returns a copy of construction-time `args`, with `kubeconfig` set from `vars` (unless already set.)
@@ -66,8 +45,8 @@ class Kubeconfig:
 
         """
         ret = deepcopy(self.args)
-        if "kubeconfig" not in ret and self.has_var("ansible_k8s_kubeconfig"):
-            ret["kubeconfig"] = self.expand_var("ansible_k8s_kubeconfig")
+        if "kubeconfig" not in ret and self.vars.has("ansible_k8s_kubeconfig"):
+            ret["kubeconfig"] = self.vars.expand("ansible_k8s_kubeconfig")
 
         return ret
 

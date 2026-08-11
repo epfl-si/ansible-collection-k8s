@@ -62,13 +62,15 @@ RETURN = """
 
 
 from ansible_collections.kubernetes.core.plugins.lookup.k8s import KubernetesLookup, LookupBase
+from ansible_collections.epfl_si.k8s.plugins.module_utils.ansible_internals import AnsibleVars
 
 
 class LookupModule(LookupBase):
     """Adapted from kubernetes.core.k8s"""
     def _run(self, terms, variables=None, **kwargs):
-        if "ansible_k8s_kubeconfig" in variables and "kubeconfig" not in kwargs:
-            kwargs["kubeconfig"] = self._templar.template(variables["ansible_k8s_kubeconfig"])
+        vars = AnsibleVars(variables, templar=self._templar)
+        if vars.has("ansible_k8s_kubeconfig") and "kubeconfig" not in kwargs:
+            kwargs["kubeconfig"] = vars.expand("ansible_k8s_kubeconfig")
         return KubernetesLookup().run(terms, variables=variables, **kwargs)
 
     run = _run if not hasattr(LookupBase, "run_on_daemon") else LookupBase.run_on_daemon

@@ -3,8 +3,8 @@ from ansible_collections.epfl_si.k8s.plugins.module_utils.kubeconfig import Kube
 
 class K8sActionBase (ActionBase):
     def run(self, task_vars=None):
-        kubeconfig = Kubeconfig(vars=task_vars, args=self._task.args,
-                                expand_vars_fn=self._templar.template)
+        kubeconfig = Kubeconfig(args=self._task.args,
+                                vars=task_vars, templar=self._templar)
 
         return self._execute_module(
                 module_name=self.WRAPPED_MODULE_NAME,
