@@ -18,6 +18,7 @@ tags:
 
 dependencies:
   kubernetes.core: ">=5.0.0"
+  # epfl_si.actions version 2.5.0 or higher is supported, but not required
 
 repository: https://github.com/epfl-si/ansible-collection-k8s
 
