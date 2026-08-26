@@ -1,3 +1,8 @@
+# Version 0.9.0: feature release
+
+- Support for latest Ansible version
+- Interface with `epfl_si.actions` collection (version 2.5.0 or above required)
+
 # Version 0.8.0: feature release
 
 - `epfl_si.k8s.k8s_json_patch` module
