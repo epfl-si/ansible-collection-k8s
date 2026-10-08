@@ -1,3 +1,7 @@
+# Version 0.10.1: feature release
+
+- `epfl_si.k8s.k8s_api_call`: support request headers
+
 # Version 0.9.0: feature release
 
 - Support for latest Ansible version
