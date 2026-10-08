@@ -39,6 +39,12 @@ options:
     type: str
     required: true
 
+  headers:
+    description:
+      - The HTTP request headers, as a dict.
+    type: dict
+    required: false
+
   body:
     description:
       - The HTTP request body, as a data structure I(before)
@@ -91,6 +97,7 @@ class APICall:
     module_args = dict(
         method=dict(type='str'),
         uri=dict(type='str'),
+        headers=dict(type='dict'),
         body=dict(type='dict'),
         kubeconfig=dict(type='dict'))
 
@@ -108,6 +115,7 @@ class APICall:
         (data, status, headers) = self.client.client.call_api(
             self.module.params['uri'],
             self.module.params['method'],
+            header_params=self.module.params.get('headers'),
             auth_settings=['BearerToken'],
             response_type="object",
             body=self.module.params['body'])
